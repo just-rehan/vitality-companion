@@ -1,0 +1,8 @@
+{
+  "name": "VitalPulse",
+  "description": "An AI-powered healthcare companion featuring emergency SOS alerts, medication reminders, vital tracking, and an intelligent health chatbot.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
