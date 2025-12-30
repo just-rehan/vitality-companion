@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 const AnimatedHelix: React.FC = () => {
   return (
     <div className="absolute inset-0 w-full h-full">
-      <svg className="w-full h-full opacity-30" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg className="w-full h-full opacity-35" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g filter="url(#filter0_f)">
           <motion.path
             initial={{ pathLength: 0, opacity: 0 }}
