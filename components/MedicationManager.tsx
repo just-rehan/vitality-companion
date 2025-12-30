@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Plus, Clock, Trash2, HelpCircle, Info, Pill, Loader2, Bell, CheckCircle2 } from 'lucide-react';
 import { Medication } from '../types';
-import { explainMedication } from '../services/geminiService';
+import { explainMedication } from '../services/chatService';
 
 interface Props {
   meds: Medication[];
@@ -61,8 +61,8 @@ const MedicationManager: React.FC<Props> = ({ meds, setMeds, onSaved }) => {
           <span className="text-xs font-bold text-cyan-400">{takenCount}/{meds.length} taken</span>
         </div>
         <div className="h-4 w-full bg-slate-800/50 rounded-full overflow-hidden p-1 border border-white/5">
-          <div 
-            className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
+          <div
+            className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
             style={{ width: `${meds.length ? (takenCount / meds.length) * 100 : 0}%` }}
           />
         </div>
@@ -72,9 +72,8 @@ const MedicationManager: React.FC<Props> = ({ meds, setMeds, onSaved }) => {
         {meds.map(med => (
           <div key={med.id} className="group p-6 bg-white/5 border border-white/10 hover:border-cyan-500/50 rounded-[2rem] transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all ${
-                med.reminderSent ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-600'
-              }`}>
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all ${med.reminderSent ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-600'
+                }`}>
                 {med.reminderSent ? <CheckCircle2 className="w-6 h-6" /> : <Pill className="w-6 h-6" />}
               </div>
               <div>
@@ -89,14 +88,14 @@ const MedicationManager: React.FC<Props> = ({ meds, setMeds, onSaved }) => {
                 <span className="text-lg font-bold">{med.time}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => handleExplain(med.id, med.name)}
                   className="p-3 bg-white/5 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition-all"
                   title="AI Insight"
                 >
                   {loadingExplanation === med.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <HelpCircle className="w-5 h-5" />}
                 </button>
-                <button 
+                <button
                   onClick={() => deleteMed(med.id)}
                   className="p-3 bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-white/10 rounded-2xl transition-all"
                 >
@@ -120,7 +119,7 @@ const MedicationManager: React.FC<Props> = ({ meds, setMeds, onSaved }) => {
             <FormInput label="Reminder Time" type="time" value={newTime} onChange={setNewTime} />
           </div>
         </div>
-        <button 
+        <button
           onClick={addMed}
           disabled={isSaving}
           className="mt-12 w-full bg-cyan-500 text-black py-5 rounded-2xl font-bold text-lg hover:bg-cyan-400 transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(6,182,212,0.2)]"

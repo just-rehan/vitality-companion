@@ -1,184 +1,120 @@
+import { useState, useRef, useEffect } from "react";
+import { sendChat } from "../services/chatService";
+import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Info, Loader2, Stethoscope, Activity, Bot, Sparkles } from 'lucide-react';
-import { getHealthAdvice, analyzeSymptoms } from '../services/geminiService';
-import { ChatMessage } from '../types';
-
-const Chatbot: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: "Hello! I'm your AI Health Assistant. I can help you with health questions, symptom analysis, and general wellness guidance. How can I assist you today?" }
-  ]);
-  const [input, setInput] = useState('');
+export default function Chatbot() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [showAnalyzer, setShowAnalyzer] = useState(false);
-  const [symptomResult, setSymptomResult] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages]);
 
-  const handleSend = async (text?: string) => {
-    const messageText = text || input;
-    if (!messageText.trim() || isLoading) return;
-
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', text: messageText }];
-    setMessages(newMessages);
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await getHealthAdvice(messages, messageText);
-      setMessages([...newMessages, { role: 'model', text: response }]);
-    } catch (error) {
-      setMessages([...newMessages, { role: 'model', text: "Sorry, I had trouble connecting. Please try again." }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const startVoiceInput = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(transcript);
-      handleSend(transcript);
-    };
-    recognition.start();
-  };
-
-  const runSymptomAnalysis = async () => {
+  async function handleSend() {
     if (!input.trim()) return;
+
+    const newMessages = [
+      ...messages,
+      { role: "user", parts: [{ text: input }] },
+    ];
+
+    setMessages(newMessages);
+    setInput("");
     setIsLoading(true);
+
     try {
-      const result = await analyzeSymptoms(input);
-      setSymptomResult(result);
-      setShowAnalyzer(true);
+      const text = await sendChat(newMessages);
+      setMessages([...newMessages, { role: "model", parts: [{ text }] }]);
     } catch (error) {
-      console.error(error);
+      setMessages([
+        ...newMessages,
+        { role: "model", parts: [{ text: "Sorry, I had trouble connecting. Please try again." }] }
+      ]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex flex-col h-[75vh] max-w-4xl mx-auto w-full">
+    <div className="flex flex-col h-[600px] w-full max-w-4xl mx-auto bg-white/5 border border-white/10 rounded-[2.5rem] backdrop-blur-xl overflow-hidden shadow-2xl">
       {/* Header */}
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20">
-            <Bot className="w-6 h-6 text-cyan-400" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              AI Health Assistant <Sparkles className="w-4 h-4 text-cyan-400" />
-            </h3>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Your personal health companion</p>
-          </div>
+      <div className="p-6 border-b border-white/5 bg-white/5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <Sparkles className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-white">Vitality AI</h2>
+          <p className="text-sm text-slate-400">Your personal health assistant</p>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-[10px] ${
-              msg.role === 'user' ? 'bg-white' : 'bg-cyan-500'
-            }`}>
-              {msg.role === 'user' ? 'ME' : <Bot className="w-4 h-4" />}
-            </div>
-            <div className={`max-w-[80%] space-y-2`}>
-              <div className={`px-5 py-4 rounded-3xl text-sm leading-relaxed ${
-                msg.role === 'user' 
-                  ? 'bg-cyan-500 text-black font-medium rounded-tr-none' 
-                  : 'bg-white/5 text-slate-200 border border-white/10 rounded-tl-none'
-              }`}>
-                {msg.text}
-                {msg.role === 'model' && i === 0 && (
-                   <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-xs text-orange-400">
-                    ⚠️ Remember: I provide informational guidance only and am not a substitute for professional medical advice.
-                   </div>
-                )}
-              </div>
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2">
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {messages.length === 0 && (
+          <div className="text-center text-slate-500 mt-20">
+            <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p>Ask me anything about your medications or health!</p>
           </div>
-        ))}
+        )}
+
+        {messages.map((msg, idx) => {
+          const isUser = msg.role === "user";
+          return (
+            <div key={idx} className={`flex gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isUser ? "bg-slate-700" : "bg-cyan-900/50 border border-cyan-500/30"
+                }`}>
+                {isUser ? <User className="w-5 h-5 text-slate-300" /> : <Bot className="w-5 h-5 text-cyan-400" />}
+              </div>
+
+              <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${isUser
+                  ? "bg-slate-700/50 text-white rounded-tr-none"
+                  : "bg-gradient-to-br from-cyan-950/30 to-blue-950/20 border border-white/10 text-slate-200 rounded-tl-none shadow-sm"
+                }`}>
+                {msg.parts[0].text}
+              </div>
+            </div>
+          );
+        })}
+
         {isLoading && (
-          <div className="flex justify-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-black"><Bot className="w-4 h-4" /></div>
-            <div className="bg-white/5 px-5 py-4 rounded-3xl rounded-tl-none border border-white/10 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-              <span className="text-xs text-slate-400">Analyzing...</span>
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-cyan-900/50 border border-cyan-500/30 flex items-center justify-center shrink-0">
+              <Bot className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div className="bg-white/5 border border-white/10 p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <span className="text-xs text-slate-400">Thinking...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestions */}
-      {!isLoading && messages.length < 3 && (
-        <div className="px-6 pb-4">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Try asking:</p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "I have a headache, what should I do?",
-              "What are the symptoms of dehydration?",
-              "How can I improve my sleep quality?"
-            ].map((s, i) => (
-              <button key={i} onClick={() => setInput(s)} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-slate-400 hover:text-white hover:border-cyan-500/50 transition-all">
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="p-6 border-t border-white/5">
-        <div className="relative">
+      {/* Input Area */}
+      <div className="p-4 bg-black/20 border-t border-white/5">
+        <div className="flex gap-2">
           <input
-            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Type your health question..."
-            className="w-full pl-6 pr-32 py-4 bg-white/5 border border-white/10 rounded-3xl text-sm text-white focus:outline-none focus:border-cyan-500/50 placeholder:text-slate-600 transition-all"
+            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all"
           />
-          <div className="absolute right-2 top-2 flex gap-2">
-            <button 
-              onClick={startVoiceInput}
-              className={`p-2 rounded-2xl transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-white/5 text-slate-400 hover:text-white'}`}
-            >
-              <Mic className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              className="p-2 bg-cyan-500 text-black rounded-2xl hover:bg-cyan-400 disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            className="w-14 h-14 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:hover:bg-cyan-500 rounded-xl flex items-center justify-center transition-all text-black shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+          >
+            {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+          </button>
         </div>
-        <p className="text-[10px] text-center text-slate-600 mt-4 font-bold uppercase tracking-widest">
-          AI assistant for informational purposes only. Not medical advice.
-        </p>
       </div>
     </div>
   );
-};
-
-export default Chatbot;
+}
